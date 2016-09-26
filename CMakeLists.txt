@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(my_project)
 
 include_directories(include)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(serial_SRCS src/serial.cc include/serial/serial.h include/serial/v8stdint.h)
 if(UNIX)
