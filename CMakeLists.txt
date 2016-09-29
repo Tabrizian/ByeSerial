@@ -18,6 +18,6 @@ if(UNIX AND NOT APPLE)
 endif()
 
 ## Build your executable
-add_executable(my_program src/main.cpp)
+add_executable(byeserial src/main.cpp)
 ## Link your executable against the library
-target_link_libraries(my_program serial)
+target_link_libraries(byeserial serial)
