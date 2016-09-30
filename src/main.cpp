@@ -35,9 +35,6 @@ void boot() {
     serial::Timeout timeout = serial::Timeout::simpleTimeout(100);
     serial_instance.setTimeout(timeout);
     serial_instance.open();
-    if(serial_instance.isOpen()) {
-        cout << "It is open" << endl;
-    }
 }
 
 int main(int argc, char **argv) {
