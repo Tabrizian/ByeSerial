@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <string>
 #include <sstream>
@@ -9,7 +10,10 @@
 #include "serial/serial.h"
 
 using namespace std;
+
+ofstream logFile("/tmp/serial.txt");
 serial::Serial serial_instance;
+
 
 void hexToInt(char *arr, int len, uint8_t* result){
     int halfOfLen = len / 2;
@@ -24,70 +28,82 @@ void hexToInt(char *arr, int len, uint8_t* result){
 
 void intToHex(string bytesArray) {
     int len = bytesArray.length();
+    logFile << "Read: ";
     for(int i = 0; i < len; i++) {
         printf("%02x", (int) bytesArray[i]);
+        logFile << (int) bytesArray[i];
     }
+    logFile << endl;
     printf("\n");
 }
 
 void boot() {
-    serial_instance.setPort("/dev/ttyUSB0");
-    serial::Timeout timeout = serial::Timeout::simpleTimeout(100);
-    serial_instance.setTimeout(timeout);
-    serial_instance.open();
+    bool done = false;
+    int i = 0;
+    while(!done) {
+        try {
+            string port = "/dev/ttyUSB" + to_string(i);
+            logFile << "Selecting port... " << port << endl;
+            serial_instance.setPort(port);
+            serial_instance.setBaudrate(atoi(getenv("BAUD_RATE")));
+            logFile << "Timeout is set to ... " << atoi(getenv("BAUD_RATE")) << endl;
+            serial::Timeout timeout = serial::Timeout::simpleTimeout(atoi(getenv("TIMEOUT")) * 100);
+            serial_instance.setTimeout(timeout);
+            logFile << "Timeout is set to ... " << atoi(getenv("TIMEOUT")) * 100 << endl;
+            serial_instance.open();
+            logFile << "Serial port is open now" << endl;
+            done = true;
+        } catch (serial::IOException exception) {
+            exit;
+            i++;
+        }
+    }
 }
+
 
 int main(int argc, char **argv) {
 
-    boot();
-    int read;
-    int sizeOfData;
-    cin >> read;
-    cin >> sizeOfData;
     while(true) {
-        if(read == 0) {
-            char data[sizeOfData];
-            cin >> data;
-            uint8_t result[sizeOfData / 2];
-            hexToInt(data, sizeOfData, result);
-            serial_instance.write(result, sizeOfData / 2);
-            serial_instance.flush();
-        } else if (read == 1) {
-            string toRead;
-            int dataRead = serial_instance.read(toRead, sizeOfData);
-            intToHex(toRead);
-        } else {
-            return 0;
+        try {
+            boot();
+            int read;
+            int sizeOfData;
+            logFile << "Ready for getting new input... " << endl;
+            cin >> read;
+            cin >> sizeOfData;
+            while(true) {
+                if(read == 0) {
+                    char data[sizeOfData];
+                    cin >> data;
+                    uint8_t result[sizeOfData / 2];
+                    hexToInt(data, sizeOfData, result);
+                    logFile << "Writing " << data << endl;
+                    serial_instance.write(result, sizeOfData / 2);
+                    serial_instance.flush();
+                } else if (read == 1) {
+                    string toRead;
+                    logFile << "Wanting to read No of bytes are " << sizeOfData << endl;
+                    int dataRead = serial_instance.read(toRead, sizeOfData);
+                    if(dataRead > 0)
+                        intToHex(toRead);
+                } else if (read == 2) {
+                    cout << "Serial flushed" << endl;
+                    serial_instance.flushInput();
+                    serial_instance.flushOutput();
+                } else {
+                    return 1;
+                }
+                logFile << "Ready for getting new input... " << endl;
+                cin >> read;
+                cin >> sizeOfData;
+            }
+        } catch (const std::bad_alloc& e) {
+            logFile << "Bad Alloc" << endl;
+        } catch (const serial::SerialException& e) {
+            logFile << "Serial Exception" << endl;
+            serial_instance.close();
         }
-        cin >> read;
-        cin >> sizeOfData;
     }
-    //if(argc == 4) {
-    //    if(strcmp(argv[2], "-r") == 0) {
-    //        int sizeOfData = strlen(argv[1]);
-    //        uint8_t result[sizeOfData / 2];
-    //        hexToInt(argv[1], sizeOfData, result);
-    //        serial->write(result, sizeOfData / 2);
-    //        serial.flush();
-    //        string toRead;
-    //        int dataRead = serial.read(toRead, atoi(argv[2]));
-    //        intToHex(toRead);
-    //    }
-    //} else if (argc == 3) {
-    //    if(strcmp(argv[1], "-r") == 0) {
-    //        string toRead;
-    //        int dataRead = serial.read(toRead, atoi(argv[2]));
-    //        intToHex(toRead);
-    //    }
-    //} else if(argc == 2) {
-    //    int sizeOfData = strlen(argv[1]);
-    //    uint8_t result[sizeOfData / 2];
-    //    hexToInt(argv[1], sizeOfData, result);
-    //    serial.write(result, sizeOfData / 2);
-    //    serial.flush();
-    //}
 
-
-    //serial.close();
     return 0;
 }
