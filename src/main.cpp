@@ -26,11 +26,12 @@ void hexToInt(char *arr, int len, uint8_t* result){
     }
 }
 
-void intToHex(string bytesArray) {
-    int len = bytesArray.length();
+void intToHex(string bytesArray,int len) {
+    logFile << "Hex " << " " << len << endl;
     logFile << "Read: ";
     for(int i = 0; i < len; i++) {
-        printf("%02x", (int) bytesArray[i]);
+        char test[3];
+        cout << (int) bytesArray[i];
         logFile << (int) bytesArray[i];
     }
     logFile << endl;
@@ -46,7 +47,7 @@ void boot() {
             logFile << "Selecting port... " << port << endl;
             serial_instance.setPort(port);
             serial_instance.setBaudrate(atoi(getenv("BAUD_RATE")));
-            logFile << "Timeout is set to ... " << atoi(getenv("BAUD_RATE")) << endl;
+            logFile << "Baudrate is set to ... " << atoi(getenv("BAUD_RATE")) << endl;
             serial::Timeout timeout = serial::Timeout::simpleTimeout(atoi(getenv("TIMEOUT")) * 100);
             serial_instance.setTimeout(timeout);
             logFile << "Timeout is set to ... " << atoi(getenv("TIMEOUT")) * 100 << endl;
@@ -84,10 +85,23 @@ int main(int argc, char **argv) {
                     string toRead;
                     logFile << "Wanting to read No of bytes are " << sizeOfData << endl;
                     int dataRead = serial_instance.read(toRead, sizeOfData);
-                    if(dataRead > 0)
-                        intToHex(toRead);
+                    if(dataRead > 0) {
+                        logFile << "Data read " << dataRead << endl;
+                        int len = dataRead;
+                        for(int i = 0; i < len; i++) {
+                            char test[3];
+                            if(((int) toRead[i] )< 0) {
+                                cout << setfill('0') << setw(2) << hex<<((int) toRead[i]) + 256;
+                                logFile<< setfill('0') << setw(2) << hex<<((int) toRead[i]) + 256;
+                            } else {
+                                cout << setfill('0') << setw(2) << hex<<(int) toRead[i];
+                                logFile<< setfill('0') << setw(2) << hex<<(int) toRead[i];
+                            }
+                        }
+                        logFile << endl;
+                        printf("\n");
+                    }
                 } else if (read == 2) {
-                    cout << "Serial flushed" << endl;
                     serial_instance.flushInput();
                     serial_instance.flushOutput();
                 } else {
