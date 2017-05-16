@@ -55,8 +55,8 @@ void boot() {
             logFile << "Serial port is open now" << endl;
             done = true;
         } catch (serial::IOException exception) {
-            exit;
             i++;
+            i = i  % 300;
         }
     }
 }
@@ -115,6 +115,7 @@ int main(int argc, char **argv) {
             logFile << "Bad Alloc" << endl;
         } catch (const serial::SerialException& e) {
             logFile << "Serial Exception" << endl;
+	    boot();
             serial_instance.close();
         }
     }
